@@ -18,9 +18,6 @@ func main() {
 		log.Fatal("Invalid Argument. Required taskDefinitionName and commit id")
 	}
 	taskDefinitionName, commitId, containerName := retrieveArg(os.Args)
-	fmt.Println(taskDefinitionName)
-	fmt.Println(commitId)
-	fmt.Println(containerName)
 
 	// taskdefimitionをアップロード
 	// 新しいtaskdefinitionのarnを表示
@@ -74,7 +71,6 @@ func main() {
 		return
 	}
 
-	fmt.Println(result)
 	taskDefinition := result.TaskDefinition
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
@@ -89,7 +85,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(registerResult)
+	fmt.Println(*registerResult.TaskDefinition.TaskDefinitionArn)
 }
 
 // 引数のバリデート
