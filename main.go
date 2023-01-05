@@ -14,13 +14,13 @@ import (
 
 func main() {
 	// 引数処理
-	if !validateArg(os.Args) {
+	if !validateArguments(os.Args) {
 		log.Fatal("Invalid Argument. Required task-definition name, commit id and container name")
 	}
 	taskDefinitionName, commitId, containerName := retrieveArg(os.Args)
 
 	// AWSインスタンス初期化
-	awsSession, err := initAWSSession()
+	awsSession, err := initializeAWSSession()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,28 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	result, err := svc.DescribeTaskDefinition(latestTaskDefinition)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case ecs.ErrCodeServerException:
-				fmt.Println(ecs.ErrCodeServerException, aerr.Error())
-			case ecs.ErrCodeClientException:
-				fmt.Println(ecs.ErrCodeClientException, aerr.Error())
-			case ecs.ErrCodeInvalidParameterException:
-				fmt.Println(ecs.ErrCodeInvalidParameterException, aerr.Error())
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		return
-	}
-
-	taskDefinition := result.TaskDefinition
+	taskDefinition, err := describeTaskDefinition(svc, latestTaskDefinition)
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
 			container.Image = aws.String(taskDefinitionName + ":" + commitId)
@@ -70,7 +49,7 @@ func main() {
 }
 
 // 引数のバリデート
-func validateArg(args []string) bool {
+func validateArguments(args []string) bool {
 	return len(args) == 4
 }
 
@@ -80,7 +59,7 @@ func retrieveArg(args []string) (string, string, string) {
 }
 
 // AWSセッション初期化
-func initAWSSession() (*session.Session, error) {
+func initializeAWSSession() (*session.Session, error) {
 	return session.NewSession(
 		&aws.Config{
 			Region: aws.String(endpoints.ApNortheast1RegionID),
@@ -111,4 +90,29 @@ func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, er
 		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
 	}, nil
 
+}
+
+func describeTaskDefinition(svc *ecs.ECS, input *ecs.DescribeTaskDefinitionInput) (*ecs.TaskDefinition, error) {
+	result, err := svc.DescribeTaskDefinition(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case ecs.ErrCodeServerException:
+				fmt.Println(ecs.ErrCodeServerException, aerr.Error())
+			case ecs.ErrCodeClientException:
+				fmt.Println(ecs.ErrCodeClientException, aerr.Error())
+			case ecs.ErrCodeInvalidParameterException:
+				fmt.Println(ecs.ErrCodeInvalidParameterException, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Println(err.Error())
+		}
+		return nil, err
+	}
+
+	return result.TaskDefinition, nil
 }
