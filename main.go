@@ -26,29 +26,9 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	var taskDefinitions []string
-	nextToken := ""
-	for {
-		result, err := svc.ListTaskDefinitions(
-			&ecs.ListTaskDefinitionsInput{
-				NextToken: aws.String(nextToken),
-			})
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		for _, arn := range result.TaskDefinitionArns {
-			taskDefinitions = append(taskDefinitions, *arn)
-		}
-		if result.NextToken == nil {
-			break
-		}
-		nextToken = *result.NextToken
-	}
-	input := &ecs.DescribeTaskDefinitionInput{
-		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
-	}
+	leastTaskDefinition := getLeastTaskDefinition(svc)
 
-	result, err := svc.DescribeTaskDefinition(input)
+	result, err := svc.DescribeTaskDefinition(leastTaskDefinition)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -94,13 +74,41 @@ func validateArg(args []string) bool {
 	return true
 }
 
+// 引数の取得
 func retrieveArg(args []string) (string, string, string) {
 	return args[1], args[2], args[3]
 }
 
+// AWSセッション初期化
 func initAwsSession() (*session.Session, error) {
 	return session.NewSession(
 		&aws.Config{
 			Region: aws.String(endpoints.ApNortheast1RegionID),
 		})
+}
+
+// 最新のタスク定義を取得
+func getLeastTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
+	var taskDefinitions []string
+	nextToken := ""
+	for {
+		result, err := svc.ListTaskDefinitions(
+			&ecs.ListTaskDefinitionsInput{
+				NextToken: aws.String(nextToken),
+			})
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		for _, arn := range result.TaskDefinitionArns {
+			taskDefinitions = append(taskDefinitions, *arn)
+		}
+		if result.NextToken == nil {
+			break
+		}
+		nextToken = *result.NextToken
+	}
+	return &ecs.DescribeTaskDefinitionInput{
+		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
+	}
+
 }
