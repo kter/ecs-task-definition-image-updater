@@ -26,7 +26,10 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	latestTaskDefinition := getLatestTaskDefinition(svc)
+	latestTaskDefinition, err := getLatestTaskDefinition(svc)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	result, err := svc.DescribeTaskDefinition(latestTaskDefinition)
 	if err != nil {
@@ -88,7 +91,7 @@ func initAwsSession() (*session.Session, error) {
 }
 
 // 最新のタスク定義を取得
-func getLatestTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
+func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, error) {
 	var taskDefinitions []string
 	nextToken := ""
 	for {
@@ -97,7 +100,7 @@ func getLatestTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
 				NextToken: aws.String(nextToken),
 			})
 		if err != nil {
-			log.Fatal(err.Error())
+			return nil, fmt.Errorf(err.Error())
 		}
 		for _, arn := range result.TaskDefinitionArns {
 			taskDefinitions = append(taskDefinitions, *arn)
@@ -109,6 +112,6 @@ func getLatestTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
 	}
 	return &ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
-	}
+	}, nil
 
 }
