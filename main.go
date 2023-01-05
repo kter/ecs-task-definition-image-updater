@@ -19,9 +19,6 @@ func main() {
 	}
 	taskDefinitionName, commitId, containerName := retrieveArg(os.Args)
 
-	// taskdefimitionをアップロード
-	// 新しいtaskdefinitionのarnを表示
-
 	// AWSインスタンス初期化
 	awsSession, err := session.NewSession(
 		&aws.Config{
