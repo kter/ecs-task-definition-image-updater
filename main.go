@@ -23,10 +23,14 @@ func main() {
 	// 新しいtaskdefinitionのarnを表示
 
 	// AWSインスタンス初期化
-	svc := ecs.New(session.New(
+	awsSession, err := session.NewSession(
 		&aws.Config{
 			Region: aws.String(endpoints.ApNortheast1RegionID),
-		}))
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+	svc := ecs.New(awsSession)
 
 	var taskDefinitions []string
 	nextToken := ""
