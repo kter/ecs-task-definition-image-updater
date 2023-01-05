@@ -32,6 +32,9 @@ func main() {
 	}
 
 	taskDefinition, err := describeTaskDefinition(svc, latestTaskDefinition)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
 			container.Image = aws.String(taskDefinitionName + ":" + commitId)
