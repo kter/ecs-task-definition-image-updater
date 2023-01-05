@@ -15,7 +15,7 @@ import (
 func main() {
 	// 引数処理
 	if !validateArg(os.Args) {
-		log.Fatal("Invalid Argument. Required taskDefinitionName and commit id")
+		log.Fatal("Invalid Argument. Required task-definition name, commit id and container name")
 	}
 	taskDefinitionName, commitId, containerName := retrieveArg(os.Args)
 
