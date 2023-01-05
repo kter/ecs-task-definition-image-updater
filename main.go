@@ -26,9 +26,9 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	leastTaskDefinition := getLeastTaskDefinition(svc)
+	latestTaskDefinition := getLatestTaskDefinition(svc)
 
-	result, err := svc.DescribeTaskDefinition(leastTaskDefinition)
+	result, err := svc.DescribeTaskDefinition(latestTaskDefinition)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -88,7 +88,7 @@ func initAwsSession() (*session.Session, error) {
 }
 
 // 最新のタスク定義を取得
-func getLeastTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
+func getLatestTaskDefinition(svc *ecs.ECS) *ecs.DescribeTaskDefinitionInput {
 	var taskDefinitions []string
 	nextToken := ""
 	for {
