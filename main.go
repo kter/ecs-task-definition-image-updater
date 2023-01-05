@@ -71,10 +71,7 @@ func main() {
 
 // 引数のバリデート
 func validateArg(args []string) bool {
-	if len(args) != 4 {
-		return false
-	}
-	return true
+	return len(args) == 4
 }
 
 // 引数の取得
