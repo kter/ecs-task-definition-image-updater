@@ -20,7 +20,7 @@ func main() {
 	taskDefinitionName, commitId, containerName := retrieveArg(os.Args)
 
 	// AWSインスタンス初期化
-	awsSession, err := initAwsSession()
+	awsSession, err := initAWSSession()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func retrieveArg(args []string) (string, string, string) {
 }
 
 // AWSセッション初期化
-func initAwsSession() (*session.Session, error) {
+func initAWSSession() (*session.Session, error) {
 	return session.NewSession(
 		&aws.Config{
 			Region: aws.String(endpoints.ApNortheast1RegionID),
