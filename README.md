@@ -1,1 +1,1 @@
-[![lint status](https://github.com/kter/ecs-task-definition-image-updater/workflows/lint/badge.svg)](https://github.com/goark/koyomi/actions)
+[![lint status](https://github.com/kter/ecs-task-definition-image-updater/workflows/lint/badge.svg)](https://github.com/kter/ecs-task-definition-image-updater/actions)
