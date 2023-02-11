@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"log"
-	"os"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 )
