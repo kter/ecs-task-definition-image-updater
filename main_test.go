@@ -55,7 +55,7 @@ func TestGetTaskDefinitionInput(t *testing.T) {
 	}
 
 	// Check that the searchTaskDefinition is returned
-	if result != nil && result.TaskDefinition != &searchTaskDefinition {
+	if result != nil && *result.TaskDefinition != "arn:aws:ecs:ap-northeast-1:848738341109:task-definition/test2:2" {
 		fmt.Println(aws.String(*result.TaskDefinition))
 		t.Errorf("Expected TaskDefinition to be %s but got %s", searchTaskDefinition, *result.TaskDefinition)
 	}
