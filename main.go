@@ -44,7 +44,7 @@ func main() {
 	}
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
-			container.Image = aws.String(taskDefinitionName + ":" + commitId)
+			container.Image = aws.String(strings.Split(*container.Image, ":")[0] + ":" + commitId)
 			break
 		}
 		log.Fatal("Specified Container Not Found")
@@ -102,14 +102,19 @@ func retrieveAllTaskDefinitionArns(svc *ecs.ECS) ([]string, error) {
 }
 
 func getTaskDefinitionInput(taskDefinitionArns []string, searchTaskDefinition string) (*ecs.DescribeTaskDefinitionInput, error) {
+	var lastTaskDefinitionArn string
 	for _, taskDefinitionArn := range taskDefinitionArns {
 		if strings.Contains(taskDefinitionArn, searchTaskDefinition) {
-			return &ecs.DescribeTaskDefinitionInput{
-				TaskDefinition: aws.String(taskDefinitionArn),
-			}, nil
+			lastTaskDefinitionArn = taskDefinitionArn
 		}
 	}
-	return nil, fmt.Errorf("TaskDefinition Not Found")
+	if lastTaskDefinitionArn == "" {
+		return nil, fmt.Errorf("TaskDefinition Not Found")
+	}
+
+	return &ecs.DescribeTaskDefinitionInput{
+		TaskDefinition: aws.String(lastTaskDefinitionArn),
+	}, nil
 }
 
 func describeTaskDefinition(svc *ecs.ECS, input *ecs.DescribeTaskDefinitionInput) (*ecs.TaskDefinition, error) {
