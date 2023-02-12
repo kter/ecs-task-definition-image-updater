@@ -101,9 +101,11 @@ func retrieveAllTaskDefinitionArns(svc *ecs.ECS) ([]string, error) {
 	return taskDefinitionArns, nil
 }
 
+// 与えられたTaskDefinitionのArnリストから最新の目的のTaskDefinition Arnを返す
 func getTaskDefinitionInput(taskDefinitionArns []string, searchTaskDefinition string) (*ecs.DescribeTaskDefinitionInput, error) {
 	var lastTaskDefinitionArn string
 	for _, taskDefinitionArn := range taskDefinitionArns {
+		// FIXME: containなので最小マッチとなっている
 		if strings.Contains(taskDefinitionArn, searchTaskDefinition) {
 			lastTaskDefinitionArn = taskDefinitionArn
 		}
