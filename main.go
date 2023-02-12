@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"log"
-	"os"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 )
@@ -26,19 +28,26 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	latestTaskDefinition, err := getLatestTaskDefinition(svc)
+	allTaskDefinitionArns, err := retrieveAllTaskDefinitionArns(svc)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	taskDefinition, err := describeTaskDefinition(svc, latestTaskDefinition)
+	taskDefinitionInput, err := getTaskDefinitionInput(allTaskDefinitionArns, taskDefinitionName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	taskDefinition, err := describeTaskDefinition(svc, taskDefinitionInput)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
-			container.Image = aws.String(taskDefinitionName + ":" + commitId)
+			container.Image = aws.String(strings.Split(*container.Image, ":")[0] + ":" + commitId)
+			break
 		}
+		log.Fatal("Specified Container Not Found")
 	}
 	registerTaskInput := &ecs.RegisterTaskDefinitionInput{
 		ContainerDefinitions: taskDefinition.ContainerDefinitions,
@@ -69,9 +78,9 @@ func initializeAWSSession() (*session.Session, error) {
 		})
 }
 
-// 最新のタスク定義を取得
-func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, error) {
-	var taskDefinitions []string
+// タスク定義をすべて取得
+func retrieveAllTaskDefinitionArns(svc *ecs.ECS) ([]string, error) {
+	var taskDefinitionArns []string
 	nextToken := ""
 	for {
 		result, err := svc.ListTaskDefinitions(
@@ -82,17 +91,32 @@ func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, er
 			return nil, fmt.Errorf(err.Error())
 		}
 		for _, arn := range result.TaskDefinitionArns {
-			taskDefinitions = append(taskDefinitions, *arn)
+			taskDefinitionArns = append(taskDefinitionArns, *arn)
 		}
 		if result.NextToken == nil {
 			break
 		}
 		nextToken = *result.NextToken
 	}
-	return &ecs.DescribeTaskDefinitionInput{
-		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
-	}, nil
+	return taskDefinitionArns, nil
+}
 
+// 与えられたTaskDefinitionのArnリストから最新の目的のTaskDefinition Arnを返す
+func getTaskDefinitionInput(taskDefinitionArns []string, searchTaskDefinition string) (*ecs.DescribeTaskDefinitionInput, error) {
+	var lastTaskDefinitionArn string
+	for _, taskDefinitionArn := range taskDefinitionArns {
+		// FIXME: containなので最小マッチとなっている
+		if strings.Contains(taskDefinitionArn, searchTaskDefinition) {
+			lastTaskDefinitionArn = taskDefinitionArn
+		}
+	}
+	if lastTaskDefinitionArn == "" {
+		return nil, fmt.Errorf("TaskDefinition Not Found")
+	}
+
+	return &ecs.DescribeTaskDefinitionInput{
+		TaskDefinition: aws.String(lastTaskDefinitionArn),
+	}, nil
 }
 
 func describeTaskDefinition(svc *ecs.ECS, input *ecs.DescribeTaskDefinitionInput) (*ecs.TaskDefinition, error) {
