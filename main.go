@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -27,7 +28,7 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	latestTaskDefinition, err := getLatestTaskDefinition(svc)
+	latestTaskDefinition, err := getSpecifiedTaskDefinition(svc, taskDefinitionName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,9 +71,9 @@ func initializeAWSSession() (*session.Session, error) {
 		})
 }
 
-// 最新のタスク定義を取得
-func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, error) {
-	var taskDefinitions []string
+// 指定の名前ののタスク定義を取得
+func getSpecifiedTaskDefinition(svc *ecs.ECS, specifiedTaskDefinitionName string) (*ecs.DescribeTaskDefinitionInput, error) {
+	var taskDefinitionArns []string
 	nextToken := ""
 	for {
 		result, err := svc.ListTaskDefinitions(
@@ -83,17 +84,22 @@ func getLatestTaskDefinition(svc *ecs.ECS) (*ecs.DescribeTaskDefinitionInput, er
 			return nil, fmt.Errorf(err.Error())
 		}
 		for _, arn := range result.TaskDefinitionArns {
-			taskDefinitions = append(taskDefinitions, *arn)
+			taskDefinitionArns = append(taskDefinitionArns, *arn)
 		}
 		if result.NextToken == nil {
 			break
 		}
 		nextToken = *result.NextToken
 	}
-	return &ecs.DescribeTaskDefinitionInput{
-		TaskDefinition: aws.String(taskDefinitions[len(taskDefinitions)-1]),
-	}, nil
 
+	for _, taskDefinitionArn := range taskDefinitionArns {
+		if strings.Contains(taskDefinitionArn, specifiedTaskDefinitionName) {
+			return &ecs.DescribeTaskDefinitionInput{
+				TaskDefinition: aws.String(taskDefinitionArn),
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("TaskDefinition Not Found")
 }
 
 func describeTaskDefinition(svc *ecs.ECS, input *ecs.DescribeTaskDefinitionInput) (*ecs.TaskDefinition, error) {
