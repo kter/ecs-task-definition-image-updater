@@ -38,3 +38,24 @@ func TestInitializeAWSSession(t *testing.T) {
 		t.Errorf("expected region to be %s, but was %s", endpoints.ApNortheast1RegionID, aws.StringValue(initializeAWSSessionResult.Config.Region))
 	}
 }
+
+// func TestGetTaskDefinitionInput(t *testing.T) {
+// 	arns := []string{
+// 		"arn:aws:ecs:ap-northeast-1:848738341109:task-definition/test2:1",
+// 		"arn:aws:ecs:ap-northeast-1:848738341109:task-definition/test2:2",
+// 		"arn:aws:ecs:ap-northeast-1:848738341109:task-definition/test:1",
+// 		"arn:aws:ecs:ap-northeast-1:848738341109:task-definition/test:2",
+// 	}
+// 	searchTaskDefinition := "test2"
+//
+// 	result, err := getTaskDefinitionInput(arns, searchTaskDefinition)
+// 	if err != nil {
+// 		t.Errorf("getTaskDefinitionInput returned unexpected error %s", err.Error())
+// 	}
+//
+// 	// Check that the region is correct
+// 	if result != nil && aws.String(result.TaskDefinition) != searchTaskDefinition {
+// 		fmt.Println(aws.String(*result.TaskDefinition))
+// 		t.Errorf("error")
+// 	}
+// }

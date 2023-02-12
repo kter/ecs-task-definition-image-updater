@@ -28,19 +28,26 @@ func main() {
 	}
 	svc := ecs.New(awsSession)
 
-	latestTaskDefinition, err := getSpecifiedTaskDefinition(svc, taskDefinitionName)
+	allTaskDefinitionArns, err := retrieveAllTaskDefinitionArns(svc)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	taskDefinition, err := describeTaskDefinition(svc, latestTaskDefinition)
+	taskDefinitionInput, err := getTaskDefinitionInput(allTaskDefinitionArns, taskDefinitionName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	taskDefinition, err := describeTaskDefinition(svc, taskDefinitionInput)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, container := range taskDefinition.ContainerDefinitions {
 		if *container.Name == containerName {
 			container.Image = aws.String(taskDefinitionName + ":" + commitId)
+			break
 		}
+		log.Fatal("Specified Container Not Found")
 	}
 	registerTaskInput := &ecs.RegisterTaskDefinitionInput{
 		ContainerDefinitions: taskDefinition.ContainerDefinitions,
@@ -71,8 +78,8 @@ func initializeAWSSession() (*session.Session, error) {
 		})
 }
 
-// 指定の名前ののタスク定義を取得
-func getSpecifiedTaskDefinition(svc *ecs.ECS, specifiedTaskDefinitionName string) (*ecs.DescribeTaskDefinitionInput, error) {
+// タスク定義をすべて取得
+func retrieveAllTaskDefinitionArns(svc *ecs.ECS) ([]string, error) {
 	var taskDefinitionArns []string
 	nextToken := ""
 	for {
@@ -91,9 +98,12 @@ func getSpecifiedTaskDefinition(svc *ecs.ECS, specifiedTaskDefinitionName string
 		}
 		nextToken = *result.NextToken
 	}
+	return taskDefinitionArns, nil
+}
 
+func getTaskDefinitionInput(taskDefinitionArns []string, searchTaskDefinition string) (*ecs.DescribeTaskDefinitionInput, error) {
 	for _, taskDefinitionArn := range taskDefinitionArns {
-		if strings.Contains(taskDefinitionArn, specifiedTaskDefinitionName) {
+		if strings.Contains(taskDefinitionArn, searchTaskDefinition) {
 			return &ecs.DescribeTaskDefinitionInput{
 				TaskDefinition: aws.String(taskDefinitionArn),
 			}, nil
